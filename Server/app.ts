@@ -27,11 +27,7 @@ const upload = multer({ storage: storage });
 
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(
-    cors({
-        origin: process.env.SITE_URL,
-    })
-);
+app.use(cors());
 app.use("/", routesIndex);
 app.use("/files", localFileStorage);
 app.post('/upload-images', upload.array("files", 100), catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
