@@ -1,0 +1,16 @@
+{
+	"$schema": "https://schema.cognitiveservices.azure.com/formrecognizer/2021-03-01/fields.json",
+	"fields": [
+		{
+			"fieldKey": "123",
+			"fieldType": "selectionMark",
+			"fieldFormat": "not-specified"
+		},
+		{
+			"fieldKey": "na",
+			"fieldType": "selectionMark",
+			"fieldFormat": "not-specified"
+		}
+	],
+	"definitions": {}
+}
