@@ -5,23 +5,26 @@
     "main": "index.js",
     "scripts": {
         "start": "ts-node Server/server.ts",
-        "server": "nodemon Server/server.ts",
+        "server": "nodemon Server/server.ts --ignore Server/data/*",
         "client": "npm run start --prefix Client",
         "dev": "concurrently \"npm run server\" \"npm run client\""
     },
     "author": "",
     "license": "MIT",
     "dependencies": {
+        "axios": "^0.21.4",
         "body-parser": "^1.19.0",
         "cors": "^2.8.5",
         "dotenv": "^10.0.0",
         "exceljs": "^4.3.0",
         "express": "^4.17.1",
+        "form-data": "^4.0.0",
         "fs-extra": "^11.1.1",
         "mrz-detection": "github:phamnam-mta/mrz-detection",
         "multer": "^1.4.5-lts.1",
         "nodemon": "^2.0.15",
         "path": "^0.12.7",
+        "sharp": "^0.32.1",
         "ts-node": "^10.9.1",
         "tslib": "^2.4.0",
         "typescript": "4.7.4"
