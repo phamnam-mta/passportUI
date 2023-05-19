@@ -254,7 +254,7 @@ function formatDate(inputDate: string) {
         return inputDate;
     }
     const year = Number(inputDate.slice(0, 2));
-    const month = Number(inputDate.slice(2, 4)); // Month is zero-based
+    const month = Number(inputDate.slice(2, 4)) - 1; // Month is zero-based
     const day = Number(inputDate.slice(4, 6));
     const date = new Date(year, month, day);
     return date.toLocaleDateString('en-GB'); // Format as "dd/mm/yyyy"
