@@ -267,7 +267,7 @@ export const exportData = catchAsyncError(async (req: Request, res: Response, ne
         												
         const columns = [
             "STT",
-            "File",
+            // "File",
             "Họ và tên (*)",
             "Ngày, tháng, năm sinh (*)",
             "Giới tính (*)",
@@ -318,8 +318,8 @@ export const exportData = catchAsyncError(async (req: Request, res: Response, ne
                     const state = parsed.fields.nationality == "TWN" ? "Taiwan" : "China";
                     const record = {
                         "STT": count,
-                        "File": filename,
-                        "Họ và tên (*)": parsed.fields.firstName + " " + parsed.fields.lastName,
+                        // "File": filename,
+                        "Họ và tên (*)": parsed.fields.lastName + " " + parsed.fields.firstName,
                         "Ngày, tháng, năm sinh (*)": formatDate(parsed.fields.birthDate),
                         "Giới tính (*)": parsed.fields.sex == "male" ? "Nam" : "Nữ",
                         "Quốc tịch hiện nay (*)": state,
