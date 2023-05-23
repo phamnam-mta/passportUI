@@ -256,7 +256,14 @@ function formatDate(inputDate: string) {
     const year = Number(inputDate.slice(0, 2));
     const month = Number(inputDate.slice(2, 4)) - 1; // Month is zero-based
     const day = Number(inputDate.slice(4, 6));
-    const date = new Date(year, month, day);
+    const twoDigitsCurrentYear = Number(new Date().getFullYear().toString().slice(2, 4));
+    let date = new Date();
+    if (year <= twoDigitsCurrentYear) {
+        date = new Date(2000 + year, month, day);
+    }
+    else {
+        date = new Date(year, month, day);
+    }
     return date.toLocaleDateString('en-GB'); // Format as "dd/mm/yyyy"
 }
 
