@@ -30,7 +30,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 app.use("/", routesIndex);
 app.use("/files", localFileStorage);
-app.post('/upload-images', upload.array("files", 100), catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+app.post('/upload-images', upload.array("files", 20), catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         await parseImage(req.files);
         res.sendStatus(200);

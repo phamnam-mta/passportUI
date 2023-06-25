@@ -133,7 +133,7 @@ export class CustomModelLabelPage extends React.PureComponent<
         const { addLoadingOverlay } = this.props;
         addLoadingOverlay({
             name: loadingOverlayName,
-            message: "Đang xử lý, vui lòng chờ trong ít phút...",
+            message: "Đang xử lý, mỗi ảnh xử lý trong khoảng 8s, vui lòng chờ trong ít phút...",
         });
         const formData = new FormData();
         for (let i = 0; i < this.state.files.length; i++) {
@@ -363,7 +363,7 @@ export class CustomModelLabelPage extends React.PureComponent<
                                 <input accept=".jpg,.jpeg,.png" multiple type="file" onChange={this.handleFileSelect} />
                                 <br />
                                 <Text variant="medium">
-                                    Chọn file<b> (tối đa 100 file, dung lượng không quá 100MB)</b>
+                                    Chọn file<b> (tối đa 20 file, dung lượng không quá 50MB)</b>
                                 </Text>
                                 <br />
                                 <PrimaryButton text="Tải lên" onClick={this.handleSubmit} />

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import catchAsyncError from "../middlewares/catchAsyncError";
 import { readFile, readdir, writeFile, unlink } from "node:fs/promises";
 import { Image } from "image-js";
+import { zipFolder } from "../utils/zipFolder"
 import path from "path";
 import axios from "axios";
 import * as Excel from 'exceljs';
@@ -73,7 +74,7 @@ async function saveImages(imagePath: any, images: any, out: any) {
     return cropPath;
   }
 
-async function saveOCRLabel(boxes: any, cropImage: any, orgImage: any, ocr: any, fileName: any) {
+async function saveOCRLabel(boxes: any, cropImage: any, orgImage: any, ocr: any, scores: any, fileName: any) {
     let boundingBoxes = []
     if (cropImage) {
         const x1 = cropImage.position[0] / orgImage.width;
@@ -82,14 +83,16 @@ async function saveOCRLabel(boxes: any, cropImage: any, orgImage: any, ocr: any,
         const y2 = (cropImage.position[1] + cropImage.height) / orgImage.height;
         boundingBoxes = [ [x1, y1, x2, y1, x2, y2, x1, y2] ]
     } else {
-        const x1 = boxes[0][0] / orgImage.width;
-        const y1 = boxes[0][1] / orgImage.height;
-        const x2 = boxes[1][0] / orgImage.width;
-        const y2 = boxes[1][1] / orgImage.height;
-        const x3 = boxes[2][0] / orgImage.width;
-        const y3 = boxes[2][1] / orgImage.height;
-        const x4 = boxes[3][0] / orgImage.width;
-        const y4 = boxes[3][1] / orgImage.height;
+        const line1 = boxes[0]
+        const line2 = boxes[1]
+        const x1 = line1[0][0] / orgImage.width;
+        const y1 = line1[0][1] / orgImage.height;
+        const x2 = line1[1][0] / orgImage.width;
+        const y2 = line1[1][1] / orgImage.height;
+        const x3 = line2[2][0] / orgImage.width;
+        const y3 = line2[2][1] / orgImage.height;
+        const x4 = line2[3][0] / orgImage.width;
+        const y4 = line2[3][1] / orgImage.height;
         boundingBoxes = [ [x1, y1, x2, y2, x3, y3, x4, y4] ]
     }
     const labels = {
@@ -103,6 +106,7 @@ async function saveOCRLabel(boxes: any, cropImage: any, orgImage: any, ocr: any,
                         "page": 1,
                         "text": ocr.join(""),
                         "ocr": ocr,
+                        "scores": scores,
                         "boundingBoxes": boundingBoxes
                     }
                 ],
@@ -119,49 +123,57 @@ export const parseImage = async (files: any) => {
         for (let file of files) {
             console.log(`process ${file.filename}`);
             const imagePath = file.path;
-            const formData = new FormData();
-            formData.append('file', fs.createReadStream(imagePath));
+            // const formData = new FormData();
+            // formData.append('file', fs.createReadStream(imagePath));
 
-            const angleApi = `${aiUrl}/api/v1/angle`;
-            try {
-                const resp = await axios.post(angleApi, formData, {
-                    headers: formData.getHeaders()
-                });
-                const imgBuffer = await sharp(imagePath).rotate(resp.data.angle).toBuffer();
-                await fs.writeFile(imagePath, imgBuffer)
-                console.log(`rotate: ${resp.data.angle}`);
-              } catch (error) {
-                console.error(error);
-            }
-            console.time(imagePath);
-            const result = { crop: null};
+            // const angleApi = `${aiUrl}/api/v1/angle`;
+            // try {
+            //     const resp = await axios.post(angleApi, formData, {
+            //         headers: formData.getHeaders()
+            //     });
+            //     const imgBuffer = await sharp(imagePath).rotate(resp.data.angle).toBuffer();
+            //     await fs.writeFile(imagePath, imgBuffer)
+            //     console.log(`rotate: ${resp.data.angle}`);
+            //   } catch (error) {
+            //     console.error(error);
+            // }
+            // console.time(imagePath);
+            // const result = { crop: null};
+            // const orgImage = await Image.load(imagePath);
+            // let detectMrzOk = true;
+            // try {
+            //     getMrz(orgImage, {
+            //     debug: false,
+            //     out: result
+            //   });
+            // } catch (e) {
+            //   console.error(e);
+            //   detectMrzOk = false;
+            // }
+            // console.timeEnd(imagePath);
+            // let ocrImage = imagePath;
+            // if (detectMrzOk) {
+            //     ocrImage = await saveImages(imagePath, result, dataLocation);
+            // }
             const orgImage = await Image.load(imagePath);
-            let detectMrzOk = true;
-            try {
-                getMrz(orgImage, {
-                debug: false,
-                out: result
-              });
-            } catch (e) {
-              console.error(e);
-              detectMrzOk = false;
-            }
-            console.timeEnd(imagePath);
-            let ocrImage = imagePath;
-            if (detectMrzOk) {
-                ocrImage = await saveImages(imagePath, result, dataLocation);
-            }
-
             const ocrApi = `${aiUrl}/api/v1/text`;
             const formData2 = new FormData();
-            formData2.append('file', fs.createReadStream(ocrImage));
+            formData2.append('file', fs.createReadStream(imagePath));
             try {
                 const resp = await axios.post(ocrApi, formData2, {
                     headers: formData2.getHeaders()
                 });
-                const { boxes, txts} = resp.data;
-                await saveOCRLabel(boxes, result.crop , orgImage, txts, file.filename);
+                const { mrz_text, boxes, scores} = resp.data;
+                await saveOCRLabel(boxes, null , orgImage, mrz_text, scores, file.filename);
               } catch (error) {
+                await fs.ensureDir(`${dataLocation}/result`);
+                fs.copyFile(file.path, `${dataLocation}/result/${file.filename}`, (err: any) => {
+                    if (err) {
+                        console.log(err)
+                    } else {
+                      console.log('File has been moved to another folder.')
+                    }
+                  })
                 console.error(error);
                 continue;
             }
@@ -251,7 +263,7 @@ function removeDirectory(directory: string) {
 
 function formatDate(inputDate: string) {
     if (!inputDate || isNaN(Number(inputDate))) {
-        return inputDate;
+        return null;
     }
     const year = Number(inputDate.slice(0, 2));
     const month = Number(inputDate.slice(2, 4)) - 1; // Month is zero-based
@@ -270,6 +282,7 @@ function formatDate(inputDate: string) {
 
 export const exportData = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
+        await fs.ensureDir(`${dataLocation}/result`)
         const fileLabels = fromDir(dataLocation, ".labels.json")
         												
         const columns = [
@@ -291,7 +304,7 @@ export const exportData = catchAsyncError(async (req: Request, res: Response, ne
             "Nơi nhận thị thực (*)"
           ]
         const sheetName = "INF_NHAN_SU";
-        const exportFile = `${dataLocation}/ocr_result.xlsx`;
+        const exportFile = `${dataLocation}/result/ocr_result.xlsx`;
         const workbook = await createReportTemplate(
             exportFile,
             columns,
@@ -300,12 +313,11 @@ export const exportData = catchAsyncError(async (req: Request, res: Response, ne
         const worksheet = workbook.getWorksheet(sheetName);
         let filename = ""
         let count = 0
-        fileLabels.forEach((_path) => {
+        fileLabels.forEach(async (_path) => {
             try {
                 const rawData = fs.readFileSync(_path);
                 const labels = JSON.parse(rawData);
                 filename = labels.document
-                count += 1
                 let ocrized = labels.labels[0]?.value[0]?.ocr || "";
                 if (ocrized) {
                     ocrized[0] = ocrized[0].slice(0, 44)
@@ -323,11 +335,20 @@ export const exportData = catchAsyncError(async (req: Request, res: Response, ne
                     }
                     const parsed = parse(ocrized);
                     const state = parsed.fields.nationality == "TWN" ? "Taiwan" : "China";
+                    let personName = null;
+                    if (parsed.fields.lastName && parsed.fields.firstName) {
+                        personName = parsed.fields.lastName + " " + parsed.fields.firstName;
+                        personName = personName.replace("0", "O");
+                    }
+
+                    const birthDate = formatDate(parsed.fields.birthDate)
+                    
+                    count += 1
                     const record = {
                         "STT": count,
                         // "File": filename,
-                        "Họ và tên (*)": parsed.fields.lastName + " " + parsed.fields.firstName,
-                        "Ngày, tháng, năm sinh (*)": formatDate(parsed.fields.birthDate),
+                        "Họ và tên (*)": personName,
+                        "Ngày, tháng, năm sinh (*)": birthDate,
                         "Giới tính (*)": parsed.fields.sex == "male" ? "Nam" : "Nữ",
                         "Quốc tịch hiện nay (*)": state,
                         "Quốc tịch gốc": state,
@@ -345,27 +366,55 @@ export const exportData = catchAsyncError(async (req: Request, res: Response, ne
                         ...Object.values(record).map((value) => value)
                     ]
                     worksheet.addRow(row).commit();
+                    // const rowExcel = worksheet.addRow(row).commit();
+                    // rowExcel.eachCell(cell => {
+                    //     cell.fill = {
+                    //       type: 'pattern',
+                    //       pattern: 'solid',
+                    //       fgColor: { argb: 'FF00FF00' } ,// Red color
+                    //     };
+
+                    //     console.log(cell.fill);
+                    //   });
+                    // rowExcel.commit();
 
                 }
                 // console.log(parsed);
               } catch (e) {
+                fs.copyFile(`${dataLocation}/${filename}`, `${dataLocation}/result/${filename}`, (err: any) => {
+                    if (err) {
+                        console.log(err)
+                    } else {
+                      console.log('File has been moved to another folder.')
+                    }
+                  })
                 console.log(e);
-                const row = [...(new Array(columns.length - 1).fill(null))]
-                row[0] = count;
-                row[1] = filename;
-                worksheet.addRow(row).commit();
+                // const row = [...(new Array(columns.length - 1).fill(null))]
+                // row[0] = count;
+                // row[1] = filename;
+                // worksheet.addRow(row).commit();
             }
         })
         await workbook.commit();
+
+        const zipResult = await zipFolder(`${dataLocation}/result`, `${dataLocation}/result.zip`)
         
         setTimeout(() => {
             removeDirectory(dataLocation);
         }, 10 * 1000);
-        const absolutePath = path.resolve(exportFile);
-        res.setHeader('Content-disposition', 'attachment; filename=' + 'ocr_result.xlsx');
-        res.setHeader('Content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        const filestream = fs.createReadStream(absolutePath);
-        filestream.pipe(res);
+        const absolutePath = path.resolve(`${dataLocation}/result.zip`);
+        // Check if the file exists
+        if (!fs.existsSync(absolutePath)) {
+            return res.status(404).send('File not found');
+        }
+
+        // Set the headers for the response
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', 'attachment; filename=download.zip');
+        console.log(absolutePath);
+        // Read the file and stream it to the response
+        const fileStream = fs.createReadStream(absolutePath);
+        fileStream.pipe(res);
     } catch (err: any) {
         err.statusCode = 404;
         throw err;

@@ -116,7 +116,7 @@ export class StorageProvider implements IStorageProvider {
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement("a");
             link.href = url;
-            link.setAttribute("download", "file.xlsx");
+            link.setAttribute("download", "file.zip");
             document.body.appendChild(link);
             link.click();
         } catch (exception) {
