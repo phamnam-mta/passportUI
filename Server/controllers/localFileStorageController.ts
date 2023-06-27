@@ -138,33 +138,35 @@ export const parseImage = async (files: any) => {
             //     console.error(error);
             // }
             // console.time(imagePath);
-            // const result = { crop: null};
-            // const orgImage = await Image.load(imagePath);
-            // let detectMrzOk = true;
-            // try {
-            //     getMrz(orgImage, {
-            //     debug: false,
-            //     out: result
-            //   });
-            // } catch (e) {
-            //   console.error(e);
-            //   detectMrzOk = false;
-            // }
-            // console.timeEnd(imagePath);
-            // let ocrImage = imagePath;
-            // if (detectMrzOk) {
-            //     ocrImage = await saveImages(imagePath, result, dataLocation);
-            // }
-            const orgImage = await Image.load(imagePath);
-            const ocrApi = `${aiUrl}/api/v1/text`;
-            const formData2 = new FormData();
-            formData2.append('file', fs.createReadStream(imagePath));
+            
             try {
-                const resp = await axios.post(ocrApi, formData2, {
-                    headers: formData2.getHeaders()
-                });
-                const { mrz_text, boxes, scores} = resp.data;
-                await saveOCRLabel(boxes, null , orgImage, mrz_text, scores, file.filename);
+                const orgImage = await Image.load(imagePath);
+                try {
+                    const ocrApi = `${aiUrl}/api/v1/text`;
+                    const formData2 = new FormData();
+                    formData2.append('file', fs.createReadStream(imagePath));
+                    const resp = await axios.post(ocrApi, formData2, {
+                        headers: formData2.getHeaders()
+                    });
+                    const { mrz_text, boxes, scores} = resp.data;
+                    await saveOCRLabel(boxes, null , orgImage, mrz_text, scores, file.filename);
+                }
+                catch {
+                    const ocrApiCrop = `${aiUrl}/api/v1/text-by-crop`;
+                    const retryResult = { crop: null};
+                    getMrz(orgImage, {
+                        debug: false,
+                        out: retryResult
+                    });
+                    const cropPath = await saveImages(imagePath, retryResult, dataLocation);
+                    const formData2 = new FormData();
+                    formData2.append('file', fs.createReadStream(cropPath));
+                    const resp = await axios.post(ocrApiCrop, formData2, {
+                        headers: formData2.getHeaders()
+                    });
+                    const { mrz_text, boxes, scores} = resp.data;
+                    await saveOCRLabel(boxes, null , orgImage, mrz_text, scores, file.filename);
+                }
               } catch (error) {
                 await fs.ensureDir(`${dataLocation}/result`);
                 fs.copyFile(file.path, `${dataLocation}/result/${file.filename}`, (err: any) => {

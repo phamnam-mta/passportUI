@@ -130,10 +130,19 @@ export class CustomModelLabelPage extends React.PureComponent<
     };
 
     private handleSubmit = async () => {
+        if (this.state.files.length > 30) {
+            this.setState({
+                errorMessage: {
+                    code: "400",
+                    message: "Số ảnh upload không được quá 30 ảnh",
+                },
+            });
+            return;
+        }
         const { addLoadingOverlay } = this.props;
         addLoadingOverlay({
             name: loadingOverlayName,
-            message: "Đang xử lý, mỗi ảnh xử lý trong khoảng 8s, vui lòng chờ trong ít phút...",
+            message: "Đang xử lý, mỗi ảnh xử lý trong khoảng 1s, vui lòng chờ trong ít phút...",
         });
         const formData = new FormData();
         for (let i = 0; i < this.state.files.length; i++) {
@@ -363,7 +372,7 @@ export class CustomModelLabelPage extends React.PureComponent<
                                 <input accept=".jpg,.jpeg,.png" multiple type="file" onChange={this.handleFileSelect} />
                                 <br />
                                 <Text variant="medium">
-                                    Chọn file<b> (tối đa 10 file, dung lượng không quá 20MB)</b>
+                                    Chọn file<b> (tối đa 30 file, dung lượng không quá 50MB)</b>
                                 </Text>
                                 <br />
                                 <PrimaryButton text="Tải lên" onClick={this.handleSubmit} />
