@@ -238,7 +238,8 @@ async function createReportTemplate(
     sheet_name: string,
   ): Promise<Excel.stream.xlsx.WorkbookWriter> {
     let workbook = new Excel.stream.xlsx.WorkbookWriter({
-        filename,
+        filename: filename,
+        useStyles: true
       });
     const worksheet = workbook.addWorksheet(sheet_name);
 
@@ -318,10 +319,8 @@ export const exportData = catchAsyncError(async (req: Request, res: Response, ne
                 const rawData = fs.readFileSync(_path);
                 const labels = JSON.parse(rawData);
                 filename = labels.document
-                let ocrized = labels.labels[0]?.value[0]?.ocr || "";
+                let ocrized = labels.labels[0]?.value[0]?.ocr || null;
                 if (ocrized) {
-                    ocrized[0] = ocrized[0].slice(0, 44)
-                    ocrized[1] = ocrized[1].slice(0, 44)
                     const padding = Math.abs(ocrized[1].length - ocrized[0].length)
                     if (padding > 0) {
                         if (ocrized[1].length > ocrized[0].length) {
@@ -334,12 +333,14 @@ export const exportData = catchAsyncError(async (req: Request, res: Response, ne
                         }
                     }
                     const parsed = parse(ocrized);
-                    const state = parsed.fields.nationality == "TWN" ? "Taiwan" : "China";
+                    const state = parsed.fields.nationality == "TWN" ? "Taiwan" : parsed.fields.nationality == "CHN" ? "China" : null;
                     let personName = null;
                     if (parsed.fields.lastName && parsed.fields.firstName) {
                         personName = parsed.fields.lastName + " " + parsed.fields.firstName;
                         personName = personName.replace("0", "O");
                     }
+                    const sex = parsed.fields.sex == "male" ? "Nam" : parsed.fields.sex == "female" ? "Nữ" : null;
+                    const ppID =  parsed.fields.documentNumber ? parsed.fields.documentNumber : null;
 
                     const birthDate = formatDate(parsed.fields.birthDate)
                     
@@ -349,12 +350,12 @@ export const exportData = catchAsyncError(async (req: Request, res: Response, ne
                         // "File": filename,
                         "Họ và tên (*)": personName,
                         "Ngày, tháng, năm sinh (*)": birthDate,
-                        "Giới tính (*)": parsed.fields.sex == "male" ? "Nam" : "Nữ",
+                        "Giới tính (*)": sex,
                         "Quốc tịch hiện nay (*)": state,
                         "Quốc tịch gốc": state,
                         "Nghề nghiệp (*)": "",
                         "Nơi làm việc": "",
-                        "Số hộ chiếu (*)": parsed.fields.documentNumber,
+                        "Số hộ chiếu (*)": ppID,
                         "Loại hộ chiếu (*)": "",
                         "Mục đích nhập cảnh (*)": "",
                         "Đề nghị từ ngày (*)": "",
@@ -365,18 +366,32 @@ export const exportData = catchAsyncError(async (req: Request, res: Response, ne
                     const row = [
                         ...Object.values(record).map((value) => value)
                     ]
-                    worksheet.addRow(row).commit();
-                    // const rowExcel = worksheet.addRow(row).commit();
-                    // rowExcel.eachCell(cell => {
-                    //     cell.fill = {
-                    //       type: 'pattern',
-                    //       pattern: 'solid',
-                    //       fgColor: { argb: 'FF00FF00' } ,// Red color
-                    //     };
-
-                    //     console.log(cell.fill);
-                    //   });
-                    // rowExcel.commit();
+                    const rowExcel = worksheet.addRow(row);
+                    rowExcel.eachCell(cell => {
+                        if (padding > 0) {
+                            cell.fill = {
+                                type: 'pattern',
+                                pattern: 'solid',
+                                fgColor: { argb: 'FFFFFF00' } ,
+                              };
+                        } else {
+                            if (cell.value === null) {
+                                cell.fill = {
+                                  type: 'pattern',
+                                  pattern: 'solid',
+                                  fgColor: { argb: 'FFFF0000' } ,// Red color
+                                };
+                            }
+                            if (parseInt(cell.col) === 9 && ["0", "O"].includes(cell.value ? cell.value.toString().charAt(1) : "")) {
+                                cell.fill = {
+                                    type: 'pattern',
+                                    pattern: 'solid',
+                                    fgColor: { argb: 'FFFFFF00' } ,
+                                  };
+                            }
+                        }
+                      });
+                    rowExcel.commit();
 
                 }
                 // console.log(parsed);
