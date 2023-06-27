@@ -363,7 +363,7 @@ export class CustomModelLabelPage extends React.PureComponent<
                                 <input accept=".jpg,.jpeg,.png" multiple type="file" onChange={this.handleFileSelect} />
                                 <br />
                                 <Text variant="medium">
-                                    Chọn file<b> (tối đa 20 file, dung lượng không quá 50MB)</b>
+                                    Chọn file<b> (tối đa 10 file, dung lượng không quá 20MB)</b>
                                 </Text>
                                 <br />
                                 <PrimaryButton text="Tải lên" onClick={this.handleSubmit} />
