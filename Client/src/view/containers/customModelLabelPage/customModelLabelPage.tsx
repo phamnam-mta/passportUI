@@ -1,5 +1,6 @@
 import * as React from "react";
 import { connect, ConnectedProps } from "react-redux";
+import ProgressBar from "@ramonak/react-progress-bar";
 import { Stack, Text, PrimaryButton } from "@fluentui/react";
 import Split from "react-split";
 import MessageModal from "view/components/messageModal/messageModal";
@@ -25,7 +26,7 @@ import { getPixelWidthFromPercent } from "utils";
 import { SplitPaneSizes } from "models";
 import DocumentGallery from "view/containers/documentGallery/documentGallery";
 import LabelPane from "view/containers/labelPane/labelPane";
-import LabelCanvas from "view/containers/labelCanvas/labelCanvas";
+// import LabelCanvas from "view/containers/labelCanvas/labelCanvas";
 import { StorageProvider, IStorageProviderError } from "providers/storageProvider";
 import { getDocumentType, isSupportedFile } from "utils/documentLoader";
 import urljoin from "url-join";
@@ -41,6 +42,7 @@ interface ICustomModelLabelPageState {
     errorMessage: IStorageProviderError | undefined;
     splitPaneSizes: SplitPaneSizes;
     showEmptyFolderMessage: boolean;
+    processCompleted: Number;
     files: Array<File>;
 }
 
@@ -64,6 +66,7 @@ export class CustomModelLabelPage extends React.PureComponent<
             errorMessage: undefined,
             splitPaneSizes: constants.defaultSplitPaneSizes,
             showEmptyFolderMessage: true,
+            processCompleted: -1,
             files: [],
         };
     }
@@ -139,18 +142,29 @@ export class CustomModelLabelPage extends React.PureComponent<
             });
             return;
         }
-        const { addLoadingOverlay } = this.props;
-        addLoadingOverlay({
-            name: loadingOverlayName,
-            message: "Đang xử lý, mỗi ảnh xử lý trong khoảng 1s, vui lòng chờ trong ít phút...",
+        // const { addLoadingOverlay } = this.props;
+        // addLoadingOverlay({
+        //     name: loadingOverlayName,
+        //     message: "Đang xử lý, mỗi ảnh xử lý trong khoảng 1s, vui lòng chờ trong ít phút...",
+        // });
+        this.setState({
+            processCompleted: 0,
         });
-        const formData = new FormData();
         for (let i = 0; i < this.state.files.length; i++) {
-            formData.append("files", this.state.files[i]);
+            const formData = new FormData();
+            formData.append("file", this.state.files[i]);
+            await this.storageProvider.writeImages(formData);
+            const a = i + 1;
+            const completed = (a / this.state.files.length) * 100;
+            this.setState({
+                processCompleted: completed,
+            });
         }
-        await this.storageProvider.writeImages(formData);
+        this.setState({
+            processCompleted: -1,
+        });
         this.initLabelPage();
-        this.props.removeLoadingOverlayByName(loadingOverlayName);
+        // this.props.removeLoadingOverlayByName(loadingOverlayName);
     };
 
     private handleExport = async () => {
@@ -341,16 +355,11 @@ export class CustomModelLabelPage extends React.PureComponent<
             splitPaneSizes,
             errorMessage,
             showEmptyFolderMessage,
+            processCompleted,
         } = this.state;
         const splitSize = isTablePaneOpen ? splitPaneSizes.labelTableSplitPaneSize : splitPaneSizes.labelSplitPaneSize;
         return (
             <Stack className="custom-doc-label-page" grow={1}>
-                <Stack className="label-page-header" horizontal horizontalAlign="space-between" verticalAlign="center">
-                    <Text tabIndex={0} aria-label="Label Page" className="page-title" as="h2">
-                        Label Page
-                    </Text>
-                    {!showEmptyFolderMessage && <PrimaryButton text="Tải kết quả" onClick={this.handleExport} />}
-                </Stack>
                 <Stack className="label-page-main" horizontal grow={1}>
                     <Stack className="label-page-gallery">
                         <DocumentGallery
@@ -367,7 +376,7 @@ export class CustomModelLabelPage extends React.PureComponent<
                         gutterSize={8}
                         onDragEnd={this.handleSplitPaneSizesChange}
                     >
-                        {showEmptyFolderMessage ? (
+                        {showEmptyFolderMessage && processCompleted === -1 ? (
                             <Stack className="label-page-canvas" verticalAlign="center" horizontalAlign="center">
                                 <input accept=".jpg,.jpeg,.png" multiple type="file" onChange={this.handleFileSelect} />
                                 <br />
@@ -377,9 +386,25 @@ export class CustomModelLabelPage extends React.PureComponent<
                                 <br />
                                 <PrimaryButton text="Tải lên" onClick={this.handleSubmit} />
                             </Stack>
+                        ) : processCompleted > -1 ? (
+                            <Stack
+                                className="label-page-canvas"
+                                verticalAlign="center"
+                                horizontalAlign="center"
+                                style={{ width: "100%" }}
+                            >
+                                <ProgressBar completed={`Đang xử lý: ${processCompleted.toFixed(2)} %`} />
+                            </Stack>
                         ) : (
-                            <Stack className="label-page-canvas" grow={1}>
-                                <LabelCanvas />
+                            // <Stack className="label-page-canvas" grow={1}>
+                            //     <LabelCanvas />
+                            // </Stack>
+                            <Stack className="label-page-canvas" horizontalAlign="center" verticalAlign="center">
+                                <PrimaryButton text="Tải kết quả" onClick={this.handleExport} />
+                                <br />
+                                <Text variant="large">
+                                    <b>Sau khi kết quả được tải về, dữ liệu trên server sẽ bị xoá sau 10s</b>
+                                </Text>
                             </Stack>
                         )}
                         <Stack className="label-page-pane">

@@ -138,7 +138,7 @@ export const parseImage = async (files: any) => {
             //     console.error(error);
             // }
             // console.time(imagePath);
-            
+            console.time(imagePath);
             try {
                 const orgImage = await Image.load(imagePath);
                 try {
@@ -179,6 +179,7 @@ export const parseImage = async (files: any) => {
                 console.error(error);
                 continue;
             }
+            console.timeEnd(imagePath);
             // try {
             //     const ocrized = await readMrz(await Image.load(cropPath));
             //     await saveOCRLabel(result.crop, orgImage, ocrized, file.filename);
@@ -335,14 +336,14 @@ export const exportData = catchAsyncError(async (req: Request, res: Response, ne
                         }
                     }
                     const parsed = parse(ocrized);
-                    const state = parsed.fields.nationality == "TWN" ? "Taiwan" : parsed.fields.nationality == "CHN" ? "China" : null;
-                    let personName = null;
+                    const state = parsed.fields.nationality == "TWN" ? "Taiwan" : parsed.fields.nationality == "CHN" ? "China" : "-";
+                    let personName = "-";
                     if (parsed.fields.lastName && parsed.fields.firstName) {
                         personName = parsed.fields.lastName + " " + parsed.fields.firstName;
                         personName = personName.replace("0", "O");
                     }
-                    const sex = parsed.fields.sex == "male" ? "Nam" : parsed.fields.sex == "female" ? "Nữ" : null;
-                    const ppID =  parsed.fields.documentNumber ? parsed.fields.documentNumber : null;
+                    const sex = parsed.fields.sex == "male" ? "Nam" : parsed.fields.sex == "female" ? "Nữ" : "-";
+                    const ppID =  parsed.fields.documentNumber ? parsed.fields.documentNumber : "-";
 
                     const birthDate = formatDate(parsed.fields.birthDate)
                     
@@ -377,7 +378,7 @@ export const exportData = catchAsyncError(async (req: Request, res: Response, ne
                                 fgColor: { argb: 'FFFFFF00' } ,
                               };
                         } else {
-                            if (cell.value === null) {
+                            if (cell.value === "-") {
                                 cell.fill = {
                                   type: 'pattern',
                                   pattern: 'solid',

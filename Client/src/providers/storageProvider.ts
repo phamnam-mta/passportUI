@@ -126,7 +126,7 @@ export class StorageProvider implements IStorageProvider {
 
     public async writeImages(formData: FormData) {
         try {
-            const api = `${serverUrl}/upload-images`;
+            const api = `${serverUrl}/upload-image`;
             const config = {
                 headers: {
                     ...axios.defaults.headers,
