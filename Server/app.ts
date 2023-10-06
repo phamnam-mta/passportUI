@@ -29,8 +29,8 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 app.use("/", routesIndex);
-app.use("/files", localFileStorage);
-app.post('/upload-images', upload.array("files", 30), catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+app.use("/api/files", localFileStorage);
+app.post('/api/upload-images', upload.array("files", 30), catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
         await parseImage(req.files);
         res.sendStatus(200);
@@ -39,7 +39,7 @@ app.post('/upload-images', upload.array("files", 30), catchAsyncError(async (req
         throw err;
     }
 }));
-app.post('/upload-image', upload.single("file"), catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+app.post('/api/upload-image', upload.single("file"), catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
   try {
       await parseImage([req.file]);
       res.sendStatus(200);
