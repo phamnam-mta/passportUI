@@ -265,7 +265,7 @@ function removeDirectory(directory: string) {
     }
   }
 
-function formatDate(inputDate: string) {
+function formatDate(inputDate: string, birthday=true) {
     if (!inputDate || isNaN(Number(inputDate))) {
         return null;
     }
@@ -274,11 +274,15 @@ function formatDate(inputDate: string) {
     const day = Number(inputDate.slice(4, 6));
     const twoDigitsCurrentYear = Number(new Date().getFullYear().toString().slice(2, 4));
     let date = new Date();
-    if (year <= twoDigitsCurrentYear) {
+    if (birthday === true) {
+        if (year <= twoDigitsCurrentYear) {
+            date = new Date(2000 + year, month, day);
+        }
+        else {
+            date = new Date(year, month, day);
+        }
+    } else {
         date = new Date(2000 + year, month, day);
-    }
-    else {
-        date = new Date(year, month, day);
     }
     return date.toLocaleDateString('en-GB'); // Format as "dd/mm/yyyy"
 }
@@ -365,7 +369,7 @@ export const exportData = catchAsyncError(async (req: Request, res: Response, ne
                     const ppID =  parsed.fields.documentNumber ? parsed.fields.documentNumber : "-";
 
                     const birthDate = formatDate(parsed.fields.birthDate)
-                    const expiredDate = formatDate(parsed.fields.expirationDate)
+                    const expiredDate = formatDate(parsed.fields.expirationDate, false)
                     
                     count += 1
                     const record = {
