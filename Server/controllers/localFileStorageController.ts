@@ -336,35 +336,70 @@ export const exportData = catchAsyncError(async (req: Request, res: Response, ne
                         }
                     }
                     const parsed = parse(ocrized);
-                    const state = parsed.fields.nationality == "TWN" ? "Taiwan" : parsed.fields.nationality == "CHN" ? "China" : "-";
-                    let personName = "-";
-                    if (parsed.fields.lastName && parsed.fields.firstName) {
-                        personName = parsed.fields.lastName + " " + parsed.fields.firstName;
-                        personName = personName.replace("0", "O");
-                    }
+                    const state = parsed.fields.nationality == "TWN" ? "TWN" : parsed.fields.nationality == "CHN" ? "CHN" : "-";
+                    // let personName = "-";
+                    // if (parsed.fields.lastName && parsed.fields.firstName) {
+                    //     personName = parsed.fields.lastName + " " + parsed.fields.firstName;
+                    //     personName = personName.replace("0", "O");
+                    // }
                     const sex = parsed.fields.sex == "male" ? "Nam" : parsed.fields.sex == "female" ? "Nữ" : "-";
                     const ppID =  parsed.fields.documentNumber ? parsed.fields.documentNumber : "-";
 
                     const birthDate = formatDate(parsed.fields.birthDate)
+                    const expiredDate = formatDate(parsed.fields.expirationDate)
                     
                     count += 1
                     const record = {
                         "STT": count,
                         // "File": filename,
-                        "Họ và tên (*)": personName,
-                        "Ngày, tháng, năm sinh (*)": birthDate,
-                        "Giới tính (*)": sex,
-                        "Quốc tịch hiện nay (*)": state,
-                        "Quốc tịch gốc": state,
-                        "Nghề nghiệp (*)": "",
-                        "Nơi làm việc": "",
-                        "Số hộ chiếu (*)": ppID,
-                        "Loại hộ chiếu (*)": "",
-                        "Mục đích nhập cảnh (*)": "",
-                        "Đề nghị từ ngày (*)": "",
-                        "Đến ngày (*)": "",
-                        "Giá trị thị thực (*)": "",
-                        "Nơi nhận thị thực (*)": "",
+                        "Họ": parsed.fields.lastName? parsed.fields.lastName.replace("0", "O") : "-",
+                        "Tên": parsed.fields.firstName? parsed.fields.firstName.replace("0", "O") : "-",
+                        "Ngày sinh": birthDate? birthDate : "-",
+                        "Nơi sinh": "",
+                        "Giới tính": sex,
+                        "Quốc tịch": state,
+                        "Tôn giáo": "",
+                        "Số CMT tại TQ": "",
+                        "Email": "",
+                        "Giá trị thị thực": "",
+                        "Số điện thoại tại Trung Quốc": "",
+                        "Loại HC": "",
+                        "Số HC": ppID,
+                        "Nơi cấp": "",
+                        "Ngày cấp": "",
+                        "Ngày hết hạn": expiredDate,
+                        "Địa chỉ thường trú": "",
+                        "Địa chỉ liên lạc tại TQ": "",
+                        "Họ tên Người liên lạc khẩn cấp": "",
+                        "Số điện thoại liên lạc khẩn cấp": "",
+                        "Nghề nghiệp": "",
+                        "Tên Cty/CQ/TH": "",
+                        "Chức vụ/KH": "",
+                        "Địa chỉ": "",
+                        "Điện thoại": "",
+                        "Mục đích nhập cảnh": "",
+                        "Cơ quan, tổ chức": "",
+                        "Địa chỉ": "",
+                        "Điện thoại": "",
+                        "Mục đích": "",
+                        "Số ngày tạm trú ở Việt Nam": "",
+                        "Ngày nhập cảnh": "",
+                        "Cửa khẩu nhập cảnh": "",
+                        "Cửa khẩu xuất cảnh": ""
+                        // "Họ và tên (*)": personName,
+                        // "Ngày, tháng, năm sinh (*)": birthDate,
+                        // "Giới tính (*)": sex,
+                        // "Quốc tịch hiện nay (*)": state,
+                        // "Quốc tịch gốc": state,
+                        // "Nghề nghiệp (*)": "",
+                        // "Nơi làm việc": "",
+                        // "Số hộ chiếu (*)": ppID,
+                        // "Loại hộ chiếu (*)": "",
+                        // "Mục đích nhập cảnh (*)": "",
+                        // "Đề nghị từ ngày (*)": "",
+                        // "Đến ngày (*)": "",
+                        // "Giá trị thị thực (*)": "",
+                        // "Nơi nhận thị thực (*)": "",
                     }
                     const row = [
                         ...Object.values(record).map((value) => value)
@@ -385,7 +420,7 @@ export const exportData = catchAsyncError(async (req: Request, res: Response, ne
                                   fgColor: { argb: 'FFFF0000' } ,// Red color
                                 };
                             }
-                            if (parseInt(cell.col) === 9 && ["0", "O"].includes(cell.value ? cell.value.toString().charAt(1) : "")) {
+                            if (parseInt(cell.col) === 14 && ["0", "O"].includes(cell.value ? cell.value.toString().charAt(1) : "")) {
                                 cell.fill = {
                                     type: 'pattern',
                                     pattern: 'solid',

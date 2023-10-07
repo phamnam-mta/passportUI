@@ -17,7 +17,8 @@ Run the below command under root folder to install node packages for Server
 ```sh
 npm i
 ```
-
+https://stackoverflow.com/questions/22475849/node-js-what-is-enospc-error-and-how-to-solve/32600959#32600959
+https://ubiq.co/tech-blog/increase-request-timeout-nginx/
 ### Install client's node packages
 
 Run the command below to install node packages for Client
