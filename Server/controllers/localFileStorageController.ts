@@ -15,7 +15,7 @@ const fs = require('fs-extra');
 const FormData = require('form-data');
 const { getMrz, readMrz, parse } = require('mrz-detection')
 
-const dataLocation = "/home/Mac_namph/passportUI/data";
+const dataLocation = "/home/Mac_namph/data";
 export const aiUrl = process.env.AI_SITE_URL;
 
 // Get file => /files/:fileName

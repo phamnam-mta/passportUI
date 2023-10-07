@@ -16,8 +16,8 @@ dotenv.config({ path: ".env" });
 
 const storage = multer.diskStorage({
     destination: async function (req, file, cb) {
-      await fs.ensureDir("/home/Mac_namph/passportUI/data");
-      cb(null,  "/home/Mac_namph/passportUI/data");
+      await fs.ensureDir("/home/Mac_namph/data");
+      cb(null,  "/home/Mac_namph/data");
     },
     filename: function (req, file, cb) {
       cb(null, file.originalname);
